@@ -173,7 +173,9 @@ def get_project_info(doc) -> dict:
             check_text(None, text, project_info, project_info_keys)
         if project_info_bak:    # 如果project_info_bak是有值的，也就说不是第一次循环
             if project_info_bak != project_info:
-                print("❌项目信息不一致", project_info_bak, project_info)
+                msg = f"错误!!!项目信息不一致❌ {project_info_bak} {project_info}"
+                dxf_data["info"].append(msg)
+                print(msg)
         project_info_bak = project_info # 备份项目信息，方便下次进行比较
     return project_info
 
@@ -187,6 +189,7 @@ def dxf2dict(dxf_path: str) -> dict:
         dict: 解析后的数据
     """
     dxf_data = {}
+    dxf_data["info"] = []   # 提取数据过程中发生的错误
     dxf_data_list = []
     dxf_data_keys = [
         "seq",          # 序号
@@ -223,17 +226,24 @@ def dxf2dict(dxf_path: str) -> dict:
                     page_code = dxf_data.get("部件编号")
                     if page_code:
                         if page_code != attr_text_list[1]:
-                            print("❌表格尾部编号不一致错误", page_code, attr_text_list[1])
+                            msg = f"错误!!!表格尾部编号不一致❌ {page_code} != {attr_text_list[1]}"
+                            dxf_data["info"].append(msg)
+                            print(msg)
                     else:
                         dxf_data["部件编号"] = attr_text_list[1]
                 case _:
-                    print("❌表格尾部信息个数错误", attr_text_list)
+                    msg = f"错误!!!表格尾部信息个数❌ {attr_text_list}"
+                    dxf_data["info"].append(msg)
+                    print(msg)
         attr_text_list.clear()
     dxf_data_list.sort(key=lambda x: (x["x"], -x["y"])) # x轴增序，y轴降序
     dxf_data.update({"data": dxf_data_list})
+    dxf_data["零件数量"] =  len(dxf_data_list)
     project_info = get_project_info(doc)
     if project_info["文件数量"] != dxf_data["文件个数"]:
-        print("❌表格个数错误", project_info["page_sum"], dxf_data["page_count"])
+        msg = f'错误!!!表格个数❌ {project_info["page_sum"]} != {dxf_data["page_count"]}'
+        dxf_data["info"].append(msg)
+        print(msg)
     dxf_data.update(project_info)
     return dxf_data
 
@@ -245,8 +255,15 @@ def dxf2dict(dxf_path: str) -> dict:
 
 if __name__ == "__main__":
     # dwg_path = "/mnt/c/Users/panzheng/Desktop/1/1.dwg"
-    # print(dwg2dxf(dwg_path))
+    # dwg_path =  r"c:\users\panzheng\desktop\1\1.dwg"
+    # dxf_path =dwg2dxf(dwg_path)
     # dxf_path = "/mnt/c/Users/panzheng/Desktop/1/1.dxf"
-    dxf_path = r"c:\users\panzheng\desktop\1\1.dxf"
+    dxf_path = r"c:\users\panzheng\desktop\1\2.dxf"
     dxf_data = dxf2dict(dxf_path)
-    # print(dxf_data)
+    for item in dxf_data:
+        if item == "data":
+            for i in dxf_data[item]:
+                print(i)
+        else:
+            print(item, dxf_data[item])
+    print(len(dxf_data["data"]))

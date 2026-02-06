@@ -1,5 +1,30 @@
 
 
+# 把列表分成专用件列表和外购件列表两个部分
+def split_datas(base_code: str, datas: list) -> tuple:     
+    for i in range(len(datas)-1, -1, -1):   # 如果是专用件编码
+        if is_comp_code(base_code, datas[i]["code"]):
+            break
+    return datas[:i + 1], datas[i + 1:]
+    # buy = datas[i + 1:]         # 生成外购件列表
+    # print(f"外购件共 {len(buy)} 件")
+    # dedicated = datas[:i + 1]   # 生成专用件列表
+    # print(f"专用件共 {len(dedicated)} 件")
+
+def del_dedicated(base_code: str, dedicated: list) -> tuple:
+    # 删除专用件列表中的杂项
+    del_list = []           # 需要删除的列表
+    info_list = []          # 需要返回的信息列表
+    for j, v in enumerate(dedicated):
+        if not is_comp_code(base_code, v["code"]):
+            msg = f"删除专用件明细表中的外购件 {v["code"]:20} {v["spec"]:20}"
+            info_list.append(msg)
+            del_list.append(j)  # 收集需要删除的索引
+            print(msg)
+    for k in reversed(del_list):
+        dedicated.pop(k)    # 执行删除
+    return dedicated, info_list
+
 # 标准化编码规则
 def standard(code: str, base_code: str="") -> str:
     # code = code.replace(base_code, "")
@@ -120,49 +145,45 @@ def generate_wtcode(prev_wtcode: str, prev_code: str, curr_code: str) -> tuple:
             myprint(f"{"上级连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
             return ("upser", wtcode)
         else:                                       # 上级不连续编码
-            wtcode = ".".join(prev_code_list)
+            wtcode = get_next_up_code(prev_wtcode, i)
             myprint(f"{"上级不连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
             return ("upgap", wtcode)
 
-def check_datas(res: dict) -> list:
-    del_list = []           # 需要删除的列表
-    datas = res["data"]
-    base_code = datas[0]["code"]
-    # 把列表分成专用件列表和外购件列表两个部分
-    for i in range(len(datas)-1, -1, -1):   # 如果是专用件编码
-        if is_comp_code(base_code, datas[i]["code"]):
-            break
-    buy = datas[i + 1:]         # 生成外购件列表
-    print(f"外购件共 {len(buy)} 件")
-    dedicated = datas[:i + 1]   # 生成专用件列表
-    print(f"专用件共 {len(dedicated)} 件")
-    # 删除专用件列表中的杂项
-    for j, v in enumerate(dedicated):
-        if not is_comp_code(base_code, v["code"]):
-            print(f"删除专用件明细表中的外购件 {v["code"]:20} {v["spec"]:20}")
-            del_list.append(j)  # 收集需要删除的索引
-    for k in reversed(del_list):
-        dedicated.pop(k)    # 执行删除
+# 检查数据并生成万通码
+def getwtcode(res: dict) -> dict:
+    base_code = res["data"][0]["code"]    # 第一个默认为部件名称和编号
+    dedicated, buy = split_datas(base_code, res["data"])  # 分割列表为专用件和外购件
+    msg = f"信息!!!零件数量共{res['零件数量']}件，其中专用件{len(dedicated)}件，外购件{len(buy)}件"
+    res["info"].append(msg)
+    print(msg)
+    dedicated, info_list = del_dedicated(base_code, dedicated)  # 删除专用件中的杂项
+    res["info"].extend(info_list)
     # 处理专用件列表
     dedicated[0]["wtcode"] = res["部件编号"]
     for m in range(1, len(dedicated)):
         _, dedicated[m]["wtcode"] = generate_wtcode(dedicated[m - 1]["wtcode"], dedicated[m - 1]["code"], dedicated[m]["code"])
-    print(f"专用件列表还剩 {len(dedicated)} 件")
+    msg = f"信息!!!专用件列表还剩 {len(dedicated)} 件"
+    res["info"].append(msg)
+    print(msg)
     # 处理外购件列表
     if len(buy) > 0:    # 有外购件
-        l = {'code': '', 'spec': '外购件', 'count': '1', 'material': '', 'unit_mass': '', 'total_mass': '', 'remark': ''}
+        l = {'seq': '', 'code': '', 'spec': '外购件汇总', 'count': '1', 'material': '', 'unit_mass': '', 'total_mass': '', 'remark': '', 'x': '', 'y': ''}
         buy.insert(0, l)    # 给所有外购件加一个上级
         buy[0]["wtcode"] = get_first_buy_code(dedicated[len(dedicated) - 1]["wtcode"])
         buy[1]["wtcode"] = get_child_code(buy[0]["wtcode"])        
         for n in range(2, len(buy)):
             buy[n]["wtcode"] = get_next_buy_code(buy[n - 1]["wtcode"])
-        return dedicated + buy
+        res["data"] = dedicated + buy
+    else: res["data"] = dedicated
+    return res
 
-from dwg2dict import dwg2dxf, dxf2dict
+
 if __name__ == "__main__":
-    dxf_path = r"c:\users\panzheng\desktop\1\1.dxf"
+    from dwg2dict import dwg2dxf, dxf2dict
+    # dxf_path = "/mnt/c/Users/panzheng/Desktop/1/2.dxf"
+    dxf_path = r"c:\users\panzheng\desktop\1\2.dxf"
     dxf_data = dxf2dict(dxf_path)
-    dxf_data["data"] = check_datas(dxf_data)
+    dxf_data = getwtcode(dxf_data)
     # for index, item in enumerate(dxf_data["data"]):
-    #     print(f"{index:10} {item["code"]:60} {item["wtcode"]:60} {len(item["wtcode"])}")
+    #     print(f"{index:10} {item}")
     
