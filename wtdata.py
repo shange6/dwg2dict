@@ -11,8 +11,8 @@ def split_datas(base_code: str, datas: list) -> tuple:
     # dedicated = datas[:i + 1]   # 生成专用件列表
     # print(f"专用件共 {len(dedicated)} 件")
 
+# 删除专用件列表中的杂项
 def del_dedicated(base_code: str, dedicated: list) -> tuple:
-    # 删除专用件列表中的杂项
     del_list = []           # 需要删除的列表
     info_list = []          # 需要返回的信息列表
     for j, v in enumerate(dedicated):
@@ -162,6 +162,10 @@ def getwtcode(res: dict) -> dict:
     dedicated[0]["wtcode"] = res["部件编号"]
     for m in range(1, len(dedicated)):
         _, dedicated[m]["wtcode"] = generate_wtcode(dedicated[m - 1]["wtcode"], dedicated[m - 1]["code"], dedicated[m]["code"])
+        if dedicated[m]["code"] == dedicated[0]["code"]:    # 如果有重复的部件编码
+            msg = f"错误!!!部件编码重复 ({dedicated[m]['code']} {dedicated[m]['spec']} {dedicated[m]['total_mass']}), ({dedicated[0]['code']} {dedicated[0]['spec']} {dedicated[0]['total_mass']})"
+            res["info"].append(msg)
+            print(msg)
     msg = f"信息!!!专用件列表还剩 {len(dedicated)} 件"
     res["info"].append(msg)
     print(msg)
@@ -173,7 +177,7 @@ def getwtcode(res: dict) -> dict:
         buy[1]["wtcode"] = get_child_code(buy[0]["wtcode"])        
         for n in range(2, len(buy)):
             buy[n]["wtcode"] = get_next_buy_code(buy[n - 1]["wtcode"])
-        res["data"] = dedicated + buy
+        res["data"] = dedicated + buy   # 合并专用件和外购件
     else: res["data"] = dedicated
     return res
 
