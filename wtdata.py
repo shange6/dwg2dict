@@ -17,7 +17,7 @@ def del_dedicated(base_code: str, dedicated: list) -> tuple:
     info_list = []          # 需要返回的信息列表
     for j, v in enumerate(dedicated):
         if not is_comp_code(base_code, v["code"]):
-            msg = f"删除专用件明细表中的外购件 {v["code"]:20} {v["spec"]:20}"
+            msg = f"删除专用件明细表中的外购件 {v['code']:20} {v['spec']:20}"
             info_list.append(msg)
             del_list.append(j)  # 收集需要删除的索引
             print(msg)
@@ -109,30 +109,30 @@ def generate_wtcode(prev_wtcode: str, prev_code: str, curr_code: str) -> tuple:
         index = comp_list(prev_code_list, curr_code_list)
         if index == len(curr_code_list):
             wtcode = get_next_peer_code(prev_wtcode)
-            myprint(f"{"完全相等的编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"完全相等的编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("same", wtcode)    # 完全相等的编码
         elif index == len(curr_code_list) - 1:
             if str(myint(prev_code_list[-1]) + 1) == curr_code_list[-1]:
                 wtcode = get_next_peer_code(prev_wtcode)
-                myprint(f"{"下一个连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+                myprint(f'{"下一个连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
                 return ("next", wtcode)# 下一个连续编码
             else:
                 wtcode = get_next_peer_code(prev_wtcode)
-                myprint(f"{"末级编码不相同不连续":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+                myprint(f'{"末级编码不相同不连续":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
                 return ("peer", wtcode)# 末级编码不相同不连续
         else:
             wtcode = get_next_peer_code(prev_wtcode)
-            myprint(f"{"多级编码不相同":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"多级编码不相同":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("some", wtcode)    # 多级编码不相同
     # 当前编码深度大于上一个编码深度，是下级编码
     if len(curr_code_list) > len(prev_code_list):
         if curr_code == prev_code + ".1":   # 连续子编码
             wtcode = get_child_code(prev_wtcode)
-            myprint(f"{"连续子编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"连续子编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("child", wtcode)
         else:                               # 下级不连续编码
             wtcode = get_child_code(prev_wtcode)
-            myprint(f"{"下级不连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"下级不连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("down", wtcode)
     # 当前编码深度小于上一个编码深度，是下级编码
     if len(curr_code_list) < len(prev_code_list):
@@ -142,11 +142,11 @@ def generate_wtcode(prev_wtcode: str, prev_code: str, curr_code: str) -> tuple:
         prev_code_list.append(new_seq)
         if prev_code_list == curr_code_list:    # 上级连续编码
             wtcode = get_next_up_code(prev_wtcode, i)
-            myprint(f"{"上级连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"上级连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("upser", wtcode)
         else:                                       # 上级不连续编码
             wtcode = get_next_up_code(prev_wtcode, i)
-            myprint(f"{"上级不连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}")
+            myprint(f'{"上级不连续编码":30} {prev_wtcode:30} {wtcode:30} {prev_code:30} {curr_code:30}')
             return ("upgap", wtcode)
 
 # 检查数据并生成万通码

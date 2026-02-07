@@ -33,7 +33,8 @@ def list2tree(res: dict) -> dict:
                     msg = f'错误!!!单位重量不能为0 {node}'
                     res['info'].append(msg)
                     print(msg)
-            else:
+        else:
+            if node['total_mass'] == 0:
                 msg = f'错误!!!总重量不能为0 {node}'
                 res['info'].append(msg)
                 print(msg)
@@ -73,7 +74,8 @@ def list2tree(res: dict) -> dict:
                 remove_empty_children(n['children'])
                 
     remove_empty_children(tree)
-    return tree
+    res['data'] = tree
+    return res
 
 if __name__ == "__main__":
     import json
