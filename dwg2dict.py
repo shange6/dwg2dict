@@ -165,7 +165,7 @@ def get_project_info(doc) -> dict:
     """
     project_info = {}
     project_info_bak = None     # 项目信息备份，用于与第二个项目信息进行比对
-    project_info_keys = ["项目名称", "合同号", "部件名称" ,"部件数量", "数量"]  
+    project_info_keys = ["项目名称", "合同号", "部件名称", "数量"]
     mtexts = doc.modelspace().query("MTEXT")
     project_info["文件数量"] = len(mtexts)  # 获取页数统计，与其他页数对比
     for mtext in mtexts:        # 获取真正的text文字，进行空格分隔
@@ -173,7 +173,7 @@ def get_project_info(doc) -> dict:
             check_text(None, text, project_info, project_info_keys)
         if project_info_bak:    # 如果project_info_bak是有值的，也就说不是第一次循环
             if project_info_bak != project_info:
-                msg = f"错误!!!项目信息不一致❌ {project_info_bak} {project_info}"
+                msg = f"错误！！！项目信息不一致❌ {project_info_bak} {project_info}"
                 dxf_data["info"].append(msg)
                 print(msg)
         project_info_bak = project_info # 备份项目信息，方便下次进行比较
@@ -226,13 +226,13 @@ def dxf2dict(dxf_path: str) -> dict:
                     page_code = dxf_data.get("部件编号")
                     if page_code:
                         if page_code != attr_text_list[1]:
-                            msg = f"错误!!!表格尾部编号不一致❌ {page_code} != {attr_text_list[1]}"
+                            msg = f"警告！！！表格尾部编号不一致❗️ {page_code} != {attr_text_list[1]}"
                             dxf_data["info"].append(msg)
                             print(msg)
                     else:
                         dxf_data["部件编号"] = attr_text_list[1]
                 case _:
-                    msg = f"错误!!!表格尾部信息个数❌ {attr_text_list}"
+                    msg = f"错误！！！表格尾部信息个数❌ {attr_text_list}"
                     dxf_data["info"].append(msg)
                     print(msg)
         attr_text_list.clear()
@@ -241,7 +241,7 @@ def dxf2dict(dxf_path: str) -> dict:
     dxf_data["零件数量"] =  len(dxf_data_list)
     project_info = get_project_info(doc)
     if project_info["文件数量"] != dxf_data["文件个数"]:
-        msg = f'错误!!!表格个数❌ {project_info["page_sum"]} != {dxf_data["page_count"]}'
+        msg = f"错误！！！表格个数❌ {project_info['page_sum']} != {dxf_data['page_count']}"
         dxf_data["info"].append(msg)
         print(msg)
     dxf_data.update(project_info)
@@ -266,4 +266,3 @@ if __name__ == "__main__":
                 print(i)
         else:
             print(item, dxf_data[item])
-    print(len(dxf_data["data"]))

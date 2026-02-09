@@ -85,6 +85,7 @@ def get_first_buy_code(code: str) -> str:
     # code = standard(code)
     code_list = code.split(".")
     wtcode = ".".join(code_list[0:2])
+    return wtcode + "." + "99"  # 外购件排序，给整改新增留出位置
     return wtcode + "." + str(myint(code_list[2]) + 1)
 
 # 获取下一个连续外购件万通码
@@ -153,20 +154,20 @@ def generate_wtcode(prev_wtcode: str, prev_code: str, curr_code: str) -> tuple:
 def getwtcode(res: dict) -> dict:
     base_code = res["data"][0]["code"]    # 第一个默认为部件名称和编号
     dedicated, buy = split_datas(base_code, res["data"])  # 分割列表为专用件和外购件
-    msg = f"信息!!!零件数量共{res['零件数量']}件，其中专用件{len(dedicated)}件，外购件{len(buy)}件"
+    msg = f"信息！！！零件数量共{res['零件数量']}件❗️，其中专用件{len(dedicated)}件，外购件{len(buy)}件"
     res["info"].append(msg)
     print(msg)
     dedicated, info_list = del_dedicated(base_code, dedicated)  # 删除专用件中的杂项
     res["info"].extend(info_list)
     # 处理专用件列表
-    dedicated[0]["wtcode"] = res["部件编号"]
+    dedicated[0]["wtcode"] = res["部件编号"]    # 第一个万通码默认是部件编号
     for m in range(1, len(dedicated)):
         _, dedicated[m]["wtcode"] = generate_wtcode(dedicated[m - 1]["wtcode"], dedicated[m - 1]["code"], dedicated[m]["code"])
         if dedicated[m]["code"] == dedicated[0]["code"]:    # 如果有重复的部件编码
-            msg = f"错误!!!部件编码重复 ({dedicated[m]['code']} {dedicated[m]['spec']} {dedicated[m]['total_mass']}), ({dedicated[0]['code']} {dedicated[0]['spec']} {dedicated[0]['total_mass']})"
+            msg = f"错误！！！部件编码重复❌ ({dedicated[m]['code']} {dedicated[m]['spec']} {dedicated[m]['total_mass']}), ({dedicated[0]['code']} {dedicated[0]['spec']} {dedicated[0]['total_mass']})"
             res["info"].append(msg)
             print(msg)
-    msg = f"信息!!!专用件列表还剩 {len(dedicated)} 件"
+    msg = f"信息！！！专用件列表还剩 {len(dedicated)} 件❗️"
     res["info"].append(msg)
     print(msg)
     # 处理外购件列表
@@ -188,6 +189,6 @@ if __name__ == "__main__":
     dxf_path = r"c:\users\panzheng\desktop\1\2.dxf"
     dxf_data = dxf2dict(dxf_path)
     dxf_data = getwtcode(dxf_data)
-    # for index, item in enumerate(dxf_data["data"]):
-    #     print(f"{index:10} {item}")
+    for index, item in enumerate(dxf_data["data"]):
+        print(f"{index:3} {item}")
     
