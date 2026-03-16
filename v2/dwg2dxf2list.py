@@ -52,7 +52,6 @@ def dwg2dxf(
         fix_CODEPAGE: bool=False
     ) -> str:
 
-    dxf_dir = os.path.abspath(dxf_dir)
     dwg_path = os.path.abspath(dwg_path)
     dwg_dir = os.path.dirname(dwg_path)
     dwg_file = os.path.basename(dwg_path)
@@ -63,6 +62,10 @@ def dwg2dxf(
         raise TypeError(f"{dwg_path}不是dwg文件")
     if not os.path.exists(dwg_path): 
         raise FileNotFoundError(f"没有发现{dwg_path}")
+    if not dxf_dir:
+        dxf_dir = dwg_dir
+    else:
+        dxf_dir = os.path.abspath(dxf_dir)
     if not os.path.exists(dxf_dir): 
         os.makedirs(dxf_dir, exist_ok=True)
     dxf_path = os.path.join(dxf_dir, f"{root}.dxf")
@@ -128,6 +131,7 @@ class Dxf2List(object):
     _pattern_format = re.compile(r'\\[fFhHwWkK].*?;|[{}]|\\P')
     _pattern_m5 = re.compile(r'\\[Mm]\+5([0-9A-Fa-f]{4})')
     _pattern_unicode = re.compile(r'\\[Uu]\+?([0-9A-Fa-f]{4})')
+    _pattern_contorl = re.compile(r'\\[^;]+;')
     
     def __init__(self, dxf_path: str, encoding: str = 'gbk'):
         self.dxf_path = dxf_path
@@ -164,7 +168,8 @@ class Dxf2List(object):
         text = self._pattern_m5.sub(self._replace_hex, text)
         text = self._pattern_unicode.sub(self._replace_hex, text)
         text = self._pattern_format.sub("", text)
-        text = self._pattern_blank.sub("", text)
+        # text = self._pattern_blank.sub("", text)
+        text = self._pattern_contorl.sub("", text)
         return text
 
     def parse(self) -> Dict[str, Any]:
@@ -201,8 +206,10 @@ class Dxf2List(object):
         mtexts = msp.query("MTEXT")
         if self.file_count != len(mtexts):
             self.log_add(f"文件数({self.file_count})与页面数({len(mtexts)})不符")
-        for mtext in mtexts:    # 每一页的项目信息栏
+        for mtext in mtexts:
+            # print(mtext.dxf.text)
             chunks = self._clean_text(mtext.dxf.text).replace(":", "").replace("：", "").split()
+            # print(chunks)
             for chunk in chunks:    # 按空格分割后的字符串
                 for label, attr_name in self.project_keys.items():
                     if label in chunk:
@@ -217,8 +224,10 @@ class Dxf2List(object):
 
 
 if __name__ == "__main__":
-    path = r"c:\users\panzheng\desktop\1\2.dxf"
-    dxf_data = Dxf2List(path)
+    # dwg_path = r"c:\users\panzheng\desktop\1\1.dwg"
+    # dxf_path = dwg2dxf(dwg_path)
+    dxf_path = r"c:\users\panzheng\desktop\1\3.dxf"
+    dxf_data = Dxf2List(dxf_path)
     dxf_data.parse()
     
     print(dxf_data.project_code)
@@ -229,3 +238,5 @@ if __name__ == "__main__":
     print(type(dxf_data.boms))
 
     wtboms = WTBOMS(dxf_data.boms, "WGWF36DH")
+    for i in wtboms.log:
+        print(i)

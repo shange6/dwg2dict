@@ -40,6 +40,20 @@ class WTBOMS():
                 "y"             # y坐标
             ]
 
+            log_bom_keys = [    # 写进log的项目
+                # "seq",          # 序号
+                "parent_code",  # 父代号
+                "code",         # 物料编码
+                "spec",         # 物料规格
+                "count",        # 数量
+                "material",     # 材质
+                "unit_mass",    # 单重
+                "total_mass",   # 总重
+                "remark",       # 备注
+                # "x",            # x坐标
+                # "y"             # y坐标
+            ]
+
             material = {
                 "钢板": r"(\d+)[xX×](\d+)[xX×](\d+)",
                 "锰板": r"(\d+)[xX×](\d+)[xX×](\d+)",
@@ -75,7 +89,7 @@ class WTBOMS():
                         return None, int(number)
                 elif isinstance(number, int):
                     return None, number
-                return f"{number} 不是有效数字", None
+                return f"不是有效数字{number}", None
 
             def check1more(self, number: int) -> str:
                 if number >= 1: return None
@@ -96,7 +110,11 @@ class WTBOMS():
                 else: return f"{number}必须大于0"
 
             def log_add(self, msg: str, status: str="错误"):
-                self.log.append(f"{status}！！！{msg} {self.bom}")
+                self.log.append({
+                    "status": status, 
+                    "msg": msg, 
+                    "bom": {k: self.bom.get(k) for k in self.log_bom_keys}
+                })
 
             def check_all(self):
                 self.check_keys()
@@ -273,9 +291,9 @@ class WTBOMS():
                         self.log_add("符号后必须是数字")
 
                     if have_minus and i in ".-":
-                        self.log_add("-后面不能有.-")
+                        self.log_add("代号中-后面不能有.-")
                     if have_slash and i in ".-/":
-                        self.log_add("/后面不能有.-/")
+                        self.log_add("代号中/后面不能有.-/")
 
                     is_dot = i == "."
                     is_minus = i == "-"
@@ -309,8 +327,12 @@ class WTBOMS():
         self.first_code = self.boms[0]["code"]
         self.check_all()
 
-    def log_add(self, msg: str, status: str="错误"):
-        self.log.append(f"{status}！！！{msg}")
+    def log_add(self, msg: str, item: WTBOM, status: str="错误"):
+        self.log.append({
+            "status": status, 
+            "msg": msg, 
+            "bom": {k: item.bom.get(k) for k in self.WTBOM.BaseBOM.log_bom_keys}
+        })
 
     def check_all(self):
         # 检查全部
@@ -322,10 +344,11 @@ class WTBOMS():
             # 检查专用件代号重复
             if item.code in code_set:
                 if not (item.bom.get("borrow") or item.bom.get("procure")):
-                    self.log_add(f"专用件代号不能重复 {item.code}")
+                    self.log_add(f"专用件代号不能重复", item)
             else:
                 code_set.add(item.code)
             # 检查父代号存在
             if item.bom.get("parent_code") not in code_list:
-                self.log_add(f"父代号不存在 parent_code = {item.bom.get("parent_code", "")}, code = {item.code}")
-                
+                self.log_add(f"父代号不存在", item)
+            # 导入WTBOM的log信息
+            self.log.extend(item.log)
