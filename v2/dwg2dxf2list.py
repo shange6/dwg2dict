@@ -115,7 +115,6 @@ def dwg2dxf(
                 
     return dxf_path
 
-from WTBOMS import WTBOMS
 import ezdxf
 import binascii
 from typing import Dict, List, Any, Optional
@@ -132,25 +131,42 @@ class Dxf2List(object):
     _pattern_m5 = re.compile(r'\\[Mm]\+5([0-9A-Fa-f]{4})')
     _pattern_unicode = re.compile(r'\\[Uu]\+?([0-9A-Fa-f]{4})')
     _pattern_contorl = re.compile(r'\\[^;]+;')
+
+    bom_keys = [
+        "seq",          # 序号
+        "code",         # 物料编码
+        "spec",         # 物料规格
+        "count",        # 数量
+        "material",     # 材质
+        "unit_mass",    # 单重
+        "total_mass",   # 总重
+        "remark",       # 备注
+        "x",            # x坐标
+        "y"             # y坐标
+    ]
     
     def __init__(self, dxf_path: str, encoding: str = 'gbk'):
         self.dxf_path = dxf_path
         self.encoding = encoding
         self.boms = []              # bom列表
-        self.log = []               # 解析日志，有错误则不能导入数据        
-        self.bom_keys = WTBOMS.WTBOM.BaseBOM.bom_keys
+        self.log = []               # 解析日志，有错误则不能导入数据
         self.project_keys = {
-            "项目名称": "project_spec",
             "项目代号": "project_code",
+            "项目名称": "project_name",
             "合同号": "project_no",
         }
         self.project_code = None    # 项目代号
-        self.project_spec = None    # 项目名称
+        self.project_name = None    # 项目名称
         self.project_no = None      # 合同号
         self.file_count = 0         # 文件个数
+        self.parse()
 
     def log_add(self, msg: str, status: str="错误"):
-        self.log.append(f"{status}！！！{msg}")
+        self.log.append({
+            "status": status, 
+            "msg": msg, 
+            # "bom": {}
+        })
 
     def _replace_hex(self, match: re.Match) -> str:
         """解析天河/天正及 Unicode 编码文本"""
@@ -172,14 +188,13 @@ class Dxf2List(object):
         text = self._pattern_contorl.sub("", text)
         return text
 
-    def parse(self) -> Dict[str, Any]:
+    def parse(self):
         """执行 DXF 深度解析"""
         try:
             doc = ezdxf.readfile(self.dxf_path, encoding=self.encoding)
             msp = doc.modelspace()
             self._parse_table_data(msp)     # 解析表格数据 (INSERT 块)
             self._parse_project_info(msp)   # 解析项目信息 (MTEXT)
-            return self.boms
         except Exception as e:
             self.log_add(f"文件读取失败: {str(e)}")
 
@@ -228,15 +243,11 @@ if __name__ == "__main__":
     # dxf_path = dwg2dxf(dwg_path)
     dxf_path = r"c:\users\panzheng\desktop\1\3.dxf"
     dxf_data = Dxf2List(dxf_path)
-    dxf_data.parse()
     
     print(dxf_data.project_code)
-    print(dxf_data.project_spec)
+    print(dxf_data.project_name)
     print(dxf_data.project_no)
     print(dxf_data.file_count)
     print(dxf_data.log)
     print(type(dxf_data.boms))
-
-    wtboms = WTBOMS(dxf_data.boms, "WGWF36DH")
-    for i in wtboms.log:
-        print(i)
+    

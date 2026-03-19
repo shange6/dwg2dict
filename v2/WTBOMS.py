@@ -8,6 +8,7 @@
 
 import re
 from typing import Dict, List, Any, Optional
+from dwg2dxf2list import dwg2dxf, Dxf2List
 
 class WTBOMS():
     # 万通 BOM 列表类
@@ -15,7 +16,7 @@ class WTBOMS():
     class WTBOM(object):
         # 万通 BOM 融合类（工厂模式）
 
-        def __new__(cls, bom: dict, project_code: str, first_code: str):        
+        def __new__(cls, bom: dict, project_code: str, first_code: str):
             remark = bom.get("remark", "")
             if "借用" in remark: target_cls = cls.BorrowBOM
             elif "外购" in remark: target_cls = cls.ProcureBOM
@@ -45,10 +46,10 @@ class WTBOMS():
                 "parent_code",  # 父代号
                 "code",         # 物料编码
                 "spec",         # 物料规格
-                "count",        # 数量
-                "material",     # 材质
-                "unit_mass",    # 单重
-                "total_mass",   # 总重
+                # "count",        # 数量
+                # "material",     # 材质
+                # "unit_mass",    # 单重
+                # "total_mass",   # 总重
                 "remark",       # 备注
                 # "x",            # x坐标
                 # "y"             # y坐标
@@ -73,7 +74,7 @@ class WTBOMS():
                 "不等边角钢": r"(\d+)[xX×](\d+)[xX×](\d+)[,，  ]L=(\d+)",
             }
 
-            def __init__(self, bom: dict, project_code: str, first_code: str):
+            def __init__(self, bom: Dict, project_code: str, first_code: str):
                 self.bom = bom
                 for key, value in self.bom.items():
                     setattr(self, key, value)
@@ -320,10 +321,13 @@ class WTBOMS():
                 self.check_sub_code(sub_code)
                 self.get_parent_code(sub_code)
 
-    def __init__(self, boms: List[WTBOM], project_code: str):
-        self.boms = boms
-        self.log = []
-        self.project_code = project_code
+    def __init__(self, data: Dxf2List):
+        self.boms = data.boms
+        self.log = data.log     # 继承Dxf2List的log信息
+        self.project_code = data.project_code
+        self.project_name = data.project_name
+        self.project_no = data.project_no
+        self.file_count = data.file_count
         self.first_code = self.boms[0]["code"]
         self.check_all()
 
@@ -351,4 +355,18 @@ class WTBOMS():
             if item.bom.get("parent_code") not in code_list:
                 self.log_add(f"父代号不存在", item)
             # 导入WTBOM的log信息
-            self.log.extend(item.log)
+            self.log.extend(item.log)   # 继承WTBOM的log信息
+
+if __name__ == "__main__":
+    # dwg_path = r"c:\users\panzheng\desktop\1\1.dwg"
+    # dxf_path = dwg2dxf(dwg_path)
+    dxf_path = r"c:\users\panzheng\desktop\1\2.dxf"
+    res = WTBOMS(Dxf2List(dxf_path))
+    # print(res.log)
+    for i in res.log:
+        print(i)
+    print(res.project_code)
+    print(res.project_name)
+    print(res.project_no)
+    print(res.file_count)
+    
